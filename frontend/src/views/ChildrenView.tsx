@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { AdminSidebar } from "@/components/composite/AdminSidebar"
@@ -14,6 +14,81 @@ function age(dob: string): number {
     (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())
   ) a--
   return a
+}
+
+function PinEditor({ child }: { child: Child }) {
+  const [pin, setPin] = useState<string | null>(null)
+  const [input, setInput] = useState("")
+  const [editing, setEditing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch(`/api/v1/children/${child.id}/pin`, { credentials: "include" })
+      .then((r) => r.json() as Promise<{ pin: string | null }>)
+      .then((d) => setPin(d.pin))
+      .catch(() => null)
+  }, [child.id])
+
+  async function save() {
+    setError(null)
+    const res = await fetch(`/api/v1/children/${child.id}/pin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ pin: input }),
+    })
+    if (!res.ok) {
+      const data = (await res.json()) as { detail?: string }
+      setError(data.detail ?? "Erreur")
+      return
+    }
+    const data = (await res.json()) as { pin: string }
+    setPin(data.pin)
+    setInput("")
+    setEditing(false)
+  }
+
+  if (!editing) {
+    return (
+      <div className="flex items-center gap-2 mt-1">
+        <span className="text-xs text-muted-foreground">
+          PIN : <span className="font-mono font-semibold">{pin ?? "—"}</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => { setEditing(true); setInput("") }}
+          className="text-xs underline text-muted-foreground hover:text-foreground"
+        >
+          {pin ? "Modifier" : "Définir"}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form
+      onSubmit={(e) => { e.preventDefault(); void save() }}
+      className="flex items-center gap-2 mt-1"
+    >
+      <input
+        className="w-20 border border-border rounded px-2 py-0.5 text-sm font-mono"
+        placeholder="0000"
+        value={input}
+        onChange={(e) => setInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+        maxLength={4}
+        pattern="\d{4}"
+        required
+        autoFocus
+      />
+      <button type="submit" className="text-xs px-2 py-0.5 rounded bg-primary text-primary-foreground">
+        OK
+      </button>
+      <button type="button" onClick={() => setEditing(false)} className="text-xs text-muted-foreground">
+        ✕
+      </button>
+      {error && <span className="text-xs text-destructive">{error}</span>}
+    </form>
+  )
 }
 
 export function ChildrenView() {
@@ -60,10 +135,7 @@ export function ChildrenView() {
 
   async function handleArchive(child: Child) {
     if (!confirm(`Archiver ${child.first_name} ?`)) return
-    await fetch(`/api/v1/children/${child.id}`, {
-      method: "DELETE",
-      credentials: "include",
-    })
+    await fetch(`/api/v1/children/${child.id}`, { method: "DELETE", credentials: "include" })
     invalidate()
   }
 
@@ -127,27 +199,30 @@ export function ChildrenView() {
 
         <div className="flex flex-col gap-2">
           {children.map((child) => (
-            <div key={child.id} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
-              <span className="text-sm font-semibold flex-1">
-                {child.first_name}
-                <span className="ml-2 text-muted-foreground font-normal text-xs">
-                  {age(child.date_of_birth)} ans
+            <div key={child.id} className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold flex-1">
+                  {child.first_name}
+                  <span className="ml-2 text-muted-foreground font-normal text-xs">
+                    {age(child.date_of_birth)} ans
+                  </span>
                 </span>
-              </span>
-              <button
-                type="button"
-                onClick={() => { setEditing(child); setForm({ first_name: child.first_name, date_of_birth: child.date_of_birth }) }}
-                className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80"
-              >
-                Modifier
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleArchive(child)}
-                className="text-xs px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100"
-              >
-                Archiver
-              </button>
+                <button
+                  type="button"
+                  onClick={() => { setEditing(child); setForm({ first_name: child.first_name, date_of_birth: child.date_of_birth }) }}
+                  className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80"
+                >
+                  Modifier
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleArchive(child)}
+                  className="text-xs px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100"
+                >
+                  Archiver
+                </button>
+              </div>
+              <PinEditor child={child} />
             </div>
           ))}
         </div>

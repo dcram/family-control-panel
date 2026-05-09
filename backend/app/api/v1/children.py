@@ -11,6 +11,8 @@ from app.models.assignment import Assignment
 from app.models.child import Child
 from app.models.parent import Parent
 from app.schemas.child import CHILD_COLORS, ChildCreate, ChildOut, ChildUpdate
+from app.schemas.pin import PinOut, PinSet
+from app.services.pins import get_pin, upsert_pin
 
 router = APIRouter(prefix="/children", tags=["children"])
 
@@ -75,6 +77,31 @@ def update_child(
     db.commit()
     db.refresh(instance=child)
     return ChildOut.model_validate(obj=child)
+
+
+@router.get("/{child_id}/pin")
+def get_child_pin(
+    child_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _: Parent = Depends(get_current_parent),
+) -> PinOut:
+    _get_child_or_404(child_id=child_id, db=db)
+    pin = get_pin(db=db, holder_type="child", holder_id=child_id)
+    return PinOut(pin=pin.pin if pin else None)
+
+
+@router.post("/{child_id}/pin")
+def set_child_pin(
+    child_id: uuid.UUID,
+    body: PinSet,
+    db: Session = Depends(get_db),
+    _: Parent = Depends(get_current_parent),
+) -> PinOut:
+    _get_child_or_404(child_id=child_id, db=db)
+    pin = upsert_pin(
+        db=db, holder_type="child", holder_id=child_id, new_pin=body.pin
+    )
+    return PinOut(pin=pin.pin)
 
 
 @router.delete("/{child_id}", status_code=status.HTTP_204_NO_CONTENT)
