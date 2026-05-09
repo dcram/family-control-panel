@@ -14,11 +14,9 @@ from app.models.task_instance import TaskInstance
 from app.models.validation import Validation
 from app.schemas.instance import DeclareRequest, InstanceOut, ValidateRequest
 from app.services.instances import (
-    apply_30h_transitions,
-    build_instance,
     get_current_week_start,
     get_next_week_start,
-    is_week_materialized,
+    load_week_instances,
 )
 
 router = APIRouter(prefix="/instances", tags=["instances"])
@@ -43,32 +41,13 @@ def get_week_instances(
             detail="week_start doit être un lundi (ISO : YYYY-MM-DD).",
         )
 
-    current_week = get_current_week_start()
-    next_week = get_next_week_start()
-
-    if week_start > next_week:
+    if week_start > get_next_week_start():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Consultation limitée à la semaine en cours + 1 (S+1).",
         )
 
-    if week_start >= current_week and not is_week_materialized(db=db, week_start=week_start):
-        assignments = db.scalars(select(Assignment)).all()
-        for assignment in assignments:
-            db.add(instance=build_instance(db=db, assignment=assignment, week_start=week_start))
-        db.flush()
-
-    instances = list(
-        db.scalars(
-            select(TaskInstance)
-            .where(TaskInstance.week_start == week_start)
-            .order_by(TaskInstance.day_of_week, TaskInstance.moment_label)
-        ).all()
-    )
-
-    apply_30h_transitions(db=db, instances=instances)
-    db.commit()
-
+    instances = load_week_instances(db=db, week_start=week_start)
     return [InstanceOut.model_validate(obj=i) for i in instances]
 
 

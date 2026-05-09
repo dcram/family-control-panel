@@ -4,6 +4,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.children import router as children_router
 from app.api.v1.assignments import router as assignments_router
 from app.api.v1.instances import router as instances_router
+from app.api.v1.kiosk import router as kiosk_router
 from app.api.v1.moments import router as moments_router
 from app.api.v1.tasks import router as tasks_router
 
@@ -13,6 +14,7 @@ app.include_router(router=auth_router, prefix="/api/v1")
 app.include_router(router=children_router, prefix="/api/v1")
 app.include_router(router=assignments_router, prefix="/api/v1")
 app.include_router(router=instances_router, prefix="/api/v1")
+app.include_router(router=kiosk_router, prefix="/api/v1")
 app.include_router(router=moments_router, prefix="/api/v1")
 app.include_router(router=tasks_router, prefix="/api/v1")
 
