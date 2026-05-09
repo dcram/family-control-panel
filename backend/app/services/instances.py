@@ -64,6 +64,26 @@ def build_instance(
     )
 
 
+def apply_30h_transitions(db: Session, instances: list[TaskInstance]) -> None:
+    now = datetime.now(tz=TZ_PARIS)
+    moments_by_label = {
+        m.label: m
+        for m in db.scalars(select(Moment)).all()
+    }
+    for instance in instances:
+        if instance.state not in ("assigned", "declared"):
+            continue
+        moment = moments_by_label.get(instance.moment_label)
+        if not moment:
+            continue
+        deadline = datetime.combine(
+            instance.instance_date, moment.end_time, tzinfo=TZ_PARIS
+        ) + timedelta(hours=30)
+        if now >= deadline:
+            instance.state = "done" if instance.state == "declared" else "unknown"
+            instance.state_changed_at = now
+
+
 def refresh_instance_snapshot(
     db: Session, instance: TaskInstance, assignment: Assignment
 ) -> None:
