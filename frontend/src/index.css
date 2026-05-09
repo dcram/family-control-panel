@@ -8,6 +8,14 @@
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
+
+    /* Couleurs enfants — source de vérité : 00-getting-started.md §10 */
+    --color-child-green: #14b8a6;   /* teal-500  */
+    --color-child-blue: #3b82f6;    /* blue-500  */
+    --color-child-amber: #f59e0b;   /* amber-500 */
+    --color-child-coral: #f97316;   /* orange-500 */
+    --color-child-purple: #8b5cf6;  /* violet-500 */
+    --color-child-gray: #9ca3af;    /* gray-400  */
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
