@@ -24,9 +24,9 @@ interface PinPadProps {
   childColor: string
   taskState: TaskState
   onVerifyPin: (pin: string) => Promise<VerifyPinResult | null>
-  onDeclare: (holderId: string) => void
-  onValidate: () => void
-  onInvalidate: (reason: InvalidReason) => void
+  onDeclare: (pin: string) => void
+  onValidate: (pin: string) => void
+  onInvalidate: (pin: string, reason: InvalidReason) => void
   onClose: () => void
 }
 
@@ -45,6 +45,7 @@ export function PinPad({
   const [digits, setDigits] = useState<string[]>([])
   const [step, setStep] = useState<PinPadStep>("pin_entry")
   const [shake, setShake] = useState(false)
+  const [verifiedPin, setVerifiedPin] = useState<string>("")
 
   const submitPin = useCallback(
     async (pin: string) => {
@@ -59,6 +60,7 @@ export function PinPad({
         setStep("pin_error")
         return
       }
+      setVerifiedPin(pin)
       if (result.holder_type === "parent") {
         setStep("parent_choice")
       } else {
@@ -66,7 +68,7 @@ export function PinPad({
           setStep("child_already_declared")
           setTimeout(() => onClose(), 1500)
         } else {
-          onDeclare(result.holder_id)
+          onDeclare(pin)
         }
       }
     },
@@ -159,7 +161,7 @@ export function PinPad({
             <p className="text-center text-sm text-muted-foreground">Parent identifié</p>
             <button
               type="button"
-              onClick={() => onValidate()}
+              onClick={() => onValidate(verifiedPin)}
               className="w-full py-3 rounded-xl bg-green-100 text-green-700 font-semibold hover:bg-green-200"
             >
               ✓ Valider
@@ -180,14 +182,14 @@ export function PinPad({
             <p className="text-center text-sm text-muted-foreground">Motif</p>
             <button
               type="button"
-              onClick={() => onInvalidate("refused")}
+              onClick={() => onInvalidate(verifiedPin, "refused")}
               className="w-full py-3 rounded-xl bg-muted font-medium hover:bg-muted/80"
             >
               Refus d'obtempérer
             </button>
             <button
               type="button"
-              onClick={() => onInvalidate("other")}
+              onClick={() => onInvalidate(verifiedPin, "other")}
               className="w-full py-3 rounded-xl bg-muted font-medium hover:bg-muted/80"
             >
               Autre raison
