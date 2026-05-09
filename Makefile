@@ -2,7 +2,7 @@
 
 install-dev:
 	cd backend && uv sync --group dev
-	cd frontend && pnpm install
+	@[ -d frontend ] && (cd frontend && pnpm install) || echo "frontend/ pas encore créé, ignoré"
 
 lint:
 	cd backend && uv run mypy app
