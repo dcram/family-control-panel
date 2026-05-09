@@ -84,6 +84,27 @@ def apply_30h_transitions(db: Session, instances: list[TaskInstance]) -> None:
             instance.state_changed_at = now
 
 
+def load_week_instances(db: Session, week_start: date) -> list[TaskInstance]:
+    """Génère les instances si nécessaire, applique les bascules 30h, commit et retourne."""
+    current_week = get_current_week_start()
+    if week_start >= current_week and not is_week_materialized(db=db, week_start=week_start):
+        assignments = db.scalars(select(Assignment)).all()
+        for assignment in assignments:
+            db.add(instance=build_instance(db=db, assignment=assignment, week_start=week_start))
+        db.flush()
+
+    instances = list(
+        db.scalars(
+            select(TaskInstance)
+            .where(TaskInstance.week_start == week_start)
+            .order_by(TaskInstance.day_of_week, TaskInstance.moment_label)
+        ).all()
+    )
+    apply_30h_transitions(db=db, instances=instances)
+    db.commit()
+    return instances
+
+
 def refresh_instance_snapshot(
     db: Session, instance: TaskInstance, assignment: Assignment
 ) -> None:
