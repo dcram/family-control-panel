@@ -21,3 +21,13 @@ class InstanceOut(BaseModel):
     day_of_week: int
 
     model_config = {"from_attributes": True}
+
+
+class DeclareRequest(BaseModel):
+    pin: str
+
+
+class ValidateRequest(BaseModel):
+    pin: str | None = None
+    target_state: str
+    reason: str | None = None

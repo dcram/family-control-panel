@@ -19,6 +19,18 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 COOKIE_NAME = "access_token"
 
 
+def get_optional_parent(
+    access_token: str | None = Cookie(default=None),
+    db: Session = Depends(get_db),
+) -> Parent | None:
+    if not access_token:
+        return None
+    parent_id = decode_access_token(token=access_token)
+    if not parent_id:
+        return None
+    return db.get(entity=Parent, ident=uuid.UUID(parent_id))
+
+
 def get_current_parent(
     access_token: str | None = Cookie(default=None),
     db: Session = Depends(get_db),
