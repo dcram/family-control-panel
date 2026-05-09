@@ -13,6 +13,8 @@ from app.core.security import (
 from app.models.kiosk_pin import KioskPin
 from app.models.parent import Parent
 from app.schemas.auth import LoginRequest, ParentOut, VerifyPinOut, VerifyPinRequest
+from app.schemas.pin import PinOut, PinSet
+from app.services.pins import get_pin, upsert_pin
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -78,6 +80,27 @@ def logout(response: Response) -> dict[str, str]:
 @router.get("/me")
 def me(current_parent: Parent = Depends(get_current_parent)) -> ParentOut:
     return ParentOut.model_validate(obj=current_parent)
+
+
+@router.get("/pin")
+def get_parent_pin(
+    db: Session = Depends(get_db),
+    current_parent: Parent = Depends(get_current_parent),
+) -> PinOut:
+    pin = get_pin(db=db, holder_type="parent", holder_id=current_parent.id)
+    return PinOut(pin=pin.pin if pin else None)
+
+
+@router.post("/pin")
+def set_parent_pin(
+    body: PinSet,
+    db: Session = Depends(get_db),
+    current_parent: Parent = Depends(get_current_parent),
+) -> PinOut:
+    pin = upsert_pin(
+        db=db, holder_type="parent", holder_id=current_parent.id, new_pin=body.pin
+    )
+    return PinOut(pin=pin.pin)
 
 
 @router.post("/verify-pin")

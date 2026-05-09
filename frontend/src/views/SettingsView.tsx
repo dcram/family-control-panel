@@ -11,6 +11,39 @@ export function SettingsView() {
   const [weatherCity, setWeatherCity] = useState("")
   const [quote, setQuote] = useState({ text: "", author: "", work: "" })
   const [saved, setSaved] = useState<string | null>(null)
+  const [parentPin, setParentPin] = useState<string | null>(null)
+  const [pinInput, setPinInput] = useState("")
+  const [pinEditing, setPinEditing] = useState(false)
+  const [pinError, setPinError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch("/api/v1/auth/pin", { credentials: "include" })
+      .then((r) => r.json() as Promise<{ pin: string | null }>)
+      .then((d) => setParentPin(d.pin))
+      .catch(() => null)
+  }, [])
+
+  async function saveParentPin(e: React.FormEvent) {
+    e.preventDefault()
+    setPinError(null)
+    const res = await fetch("/api/v1/auth/pin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ pin: pinInput }),
+    })
+    if (!res.ok) {
+      const data = (await res.json()) as { detail?: string }
+      setPinError(data.detail ?? "Erreur")
+      return
+    }
+    const data = (await res.json()) as { pin: string }
+    setParentPin(data.pin)
+    setPinInput("")
+    setPinEditing(false)
+    setSaved("PIN parent enregistré")
+    setTimeout(() => setSaved(null), 2000)
+  }
 
   useEffect(() => {
     fetch("/api/v1/config/", { credentials: "include" })
@@ -78,6 +111,47 @@ export function SettingsView() {
             {saved}
           </div>
         )}
+
+        <section className="bg-card border border-border rounded-xl p-4 mb-4">
+          <h2 className="font-semibold text-sm mb-3">Mon PIN kiosque (parent)</h2>
+          <p className="text-xs text-muted-foreground mb-3">
+            Ce code à 4 chiffres vous identifie comme parent sur le kiosque pour valider les tâches.
+          </p>
+          {!pinEditing ? (
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-lg font-semibold">
+                {parentPin ?? "—"}
+              </span>
+              <button
+                type="button"
+                onClick={() => { setPinEditing(true); setPinInput("") }}
+                className="text-sm px-3 py-1 rounded-lg bg-muted hover:bg-muted/80"
+              >
+                {parentPin ? "Modifier" : "Définir"}
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={(e) => void saveParentPin(e)} className="flex items-center gap-2">
+              <input
+                className="w-24 border border-border rounded-lg px-3 py-2 text-sm font-mono"
+                placeholder="0000"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                maxLength={4}
+                pattern="\d{4}"
+                required
+                autoFocus
+              />
+              <button type="submit" className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm">
+                Enregistrer
+              </button>
+              <button type="button" onClick={() => setPinEditing(false)} className="px-3 py-2 rounded-lg bg-muted text-sm">
+                Annuler
+              </button>
+              {pinError && <span className="text-xs text-destructive">{pinError}</span>}
+            </form>
+          )}
+        </section>
 
         <section className="bg-card border border-border rounded-xl p-4 mb-4">
           <h2 className="font-semibold text-sm mb-3">Météo</h2>
