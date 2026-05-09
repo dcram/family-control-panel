@@ -1,18 +1,16 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.models.kiosk_config import KioskConfig
 from app.schemas.instance import InstanceOut
 from app.schemas.kiosk import KioskInfoOut
-from app.services.instances import (
-    TZ_PARIS,
-    get_next_week_start,
-    load_week_instances,
-)
-from datetime import date
+from app.services.instances import TZ_PARIS, get_next_week_start, load_week_instances
+from app.services.saint import get_saint_of_day
+from app.services.weather import get_current_weather
 
 router = APIRouter(prefix="/kiosk", tags=["kiosk"])
 
@@ -21,10 +19,13 @@ router = APIRouter(prefix="/kiosk", tags=["kiosk"])
 def get_kiosk_info(db: Session = Depends(get_db)) -> KioskInfoOut:
     config = db.get(entity=KioskConfig, ident=1)
     today = datetime.now(tz=TZ_PARIS).date()
+    saint = get_saint_of_day(d=today) or None
+    city = config.weather_city if config else settings.weather_city
+    weather = get_current_weather(city=city, api_key=settings.openweather_api_key)
     return KioskInfoOut(
         date=today,
-        saint=None,
-        weather=None,
+        saint=saint,
+        weather=weather,
         quote_text=config.quote_text if config else None,
         quote_author=config.quote_author if config else None,
         quote_work=config.quote_work if config else None,
