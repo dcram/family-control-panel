@@ -20,7 +20,9 @@ router = APIRouter(prefix="/children", tags=["children"])
 def _get_child_or_404(child_id: uuid.UUID, db: Session) -> Child:
     child = db.get(entity=Child, ident=child_id)
     if not child or child.archived_at is not None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Enfant introuvable")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Enfant introuvable"
+        )
     return child
 
 
@@ -30,9 +32,7 @@ def list_children(
     _: Parent = Depends(get_current_parent),
 ) -> list[ChildOut]:
     rows = db.scalars(
-        select(Child)
-        .where(Child.archived_at.is_(None))
-        .order_by(Child.sort_order)
+        select(Child).where(Child.archived_at.is_(None)).order_by(Child.sort_order)
     ).all()
     return [ChildOut.model_validate(obj=r) for r in rows]
 
@@ -43,13 +43,16 @@ def create_child(
     db: Session = Depends(get_db),
     _: Parent = Depends(get_current_parent),
 ) -> ChildOut:
-    count = db.scalar(
-        select(func.count()).select_from(Child).where(Child.archived_at.is_(None))
-    ) or 0
+    count = (
+        db.scalar(
+            select(func.count()).select_from(Child).where(Child.archived_at.is_(None))
+        )
+        or 0
+    )
     color = CHILD_COLORS[count % len(CHILD_COLORS)]
-    sort_order = db.scalar(
-        select(func.coalesce(func.max(Child.sort_order) + 1, 0))
-    ) or 0
+    sort_order = (
+        db.scalar(select(func.coalesce(func.max(Child.sort_order) + 1, 0))) or 0
+    )
     child = Child(
         first_name=body.first_name,
         date_of_birth=body.date_of_birth,

@@ -66,10 +66,7 @@ def build_instance(
 
 def apply_30h_transitions(db: Session, instances: list[TaskInstance]) -> None:
     now = datetime.now(tz=TZ_PARIS)
-    moments_by_label = {
-        m.label: m
-        for m in db.scalars(select(Moment)).all()
-    }
+    moments_by_label = {m.label: m for m in db.scalars(select(Moment)).all()}
     for instance in instances:
         if instance.state not in ("assigned", "declared"):
             continue
@@ -87,10 +84,16 @@ def apply_30h_transitions(db: Session, instances: list[TaskInstance]) -> None:
 def load_week_instances(db: Session, week_start: date) -> list[TaskInstance]:
     """Génère les instances si nécessaire, applique les bascules 30h, commit et retourne."""
     current_week = get_current_week_start()
-    if week_start >= current_week and not is_week_materialized(db=db, week_start=week_start):
+    if week_start >= current_week and not is_week_materialized(
+        db=db, week_start=week_start
+    ):
         assignments = db.scalars(select(Assignment)).all()
         for assignment in assignments:
-            db.add(instance=build_instance(db=db, assignment=assignment, week_start=week_start))
+            db.add(
+                instance=build_instance(
+                    db=db, assignment=assignment, week_start=week_start
+                )
+            )
         db.flush()
 
     instances = list(
@@ -119,4 +122,6 @@ def refresh_instance_snapshot(
     instance.child_color = child.color
     instance.moment_label = moment.label
     instance.day_of_week = assignment.day_of_week
-    instance.instance_date = instance.week_start + timedelta(days=assignment.day_of_week)
+    instance.instance_date = instance.week_start + timedelta(
+        days=assignment.day_of_week
+    )

@@ -18,7 +18,9 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 def _get_task_or_404(task_id: uuid.UUID, db: Session) -> Task:
     task = db.get(entity=Task, ident=task_id)
     if not task or task.archived_at is not None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tâche introuvable")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tâche introuvable"
+        )
     return task
 
 

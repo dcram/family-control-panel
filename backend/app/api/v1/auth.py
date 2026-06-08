@@ -55,7 +55,9 @@ def login(
     db: Session = Depends(get_db),
 ) -> ParentOut:
     parent = db.scalar(select(Parent).where(Parent.login == body.login))
-    if not parent or not verify_password(plain=body.password, hashed=parent.password_hash):
+    if not parent or not verify_password(
+        plain=body.password, hashed=parent.password_hash
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Identifiants invalides",
@@ -110,7 +112,9 @@ def verify_pin(
 ) -> VerifyPinOut:
     kiosk_pin = db.get(entity=KioskPin, ident=body.pin)
     if not kiosk_pin:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="PIN inconnu")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="PIN inconnu"
+        )
     return VerifyPinOut(
         holder_type=kiosk_pin.holder_type,
         holder_id=kiosk_pin.holder_id,

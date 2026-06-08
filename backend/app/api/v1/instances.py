@@ -25,7 +25,9 @@ router = APIRouter(prefix="/instances", tags=["instances"])
 def _get_instance_or_404(instance_id: uuid.UUID, db: Session) -> TaskInstance:
     instance = db.get(entity=TaskInstance, ident=instance_id)
     if not instance:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instance introuvable")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Instance introuvable"
+        )
     return instance
 
 
@@ -59,7 +61,9 @@ def declare_instance(
 ) -> InstanceOut:
     kiosk_pin = db.get(entity=KioskPin, ident=body.pin)
     if not kiosk_pin:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="PIN inconnu")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="PIN inconnu"
+        )
 
     if kiosk_pin.holder_type == "parent":
         raise HTTPException(

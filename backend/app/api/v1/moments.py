@@ -16,7 +16,9 @@ router = APIRouter(prefix="/moments", tags=["moments"])
 def _get_moment_or_404(moment_id: uuid.UUID, db: Session) -> Moment:
     moment = db.get(entity=Moment, ident=moment_id)
     if not moment:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Moment introuvable")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Moment introuvable"
+        )
     return moment
 
 

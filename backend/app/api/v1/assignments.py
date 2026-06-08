@@ -32,7 +32,9 @@ router = APIRouter(prefix="/assignments", tags=["assignments"])
 def _get_assignment_or_404(assignment_id: uuid.UUID, db: Session) -> Assignment:
     assignment = db.get(entity=Assignment, ident=assignment_id)
     if not assignment:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignation introuvable")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Assignation introuvable"
+        )
     return assignment
 
 
@@ -97,7 +99,11 @@ def clone_week(
         if not assignment:
             skipped += 1
             continue
-        db.add(instance=build_instance(db=db, assignment=assignment, week_start=body.target_week))
+        db.add(
+            instance=build_instance(
+                db=db, assignment=assignment, week_start=body.target_week
+            )
+        )
         created += 1
 
     db.commit()
@@ -121,7 +127,11 @@ def create_assignment(
 
     for week_start in [get_current_week_start(), get_next_week_start()]:
         if is_week_materialized(db=db, week_start=week_start):
-            db.add(instance=build_instance(db=db, assignment=assignment, week_start=week_start))
+            db.add(
+                instance=build_instance(
+                    db=db, assignment=assignment, week_start=week_start
+                )
+            )
 
     db.commit()
     db.refresh(instance=assignment)
@@ -148,7 +158,9 @@ def update_assignment(
         assignment.day_of_week = body.day_of_week
 
     if current_instance and current_instance.state == "assigned":
-        refresh_instance_snapshot(db=db, instance=current_instance, assignment=assignment)
+        refresh_instance_snapshot(
+            db=db, instance=current_instance, assignment=assignment
+        )
 
     db.commit()
     db.refresh(instance=assignment)
