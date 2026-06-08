@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: fcp
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?err}
+      POSTGRES_DB: fcp
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fcp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ghcr.io/dcram/fcp-backend:latest
+    environment:
+      DATABASE_URL: postgresql://fcp:${POSTGRES_PASSWORD:?err}@db:5432/fcp
+      SECRET_KEY: ${SECRET_KEY:?err}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+      WEATHER_CITY: ${WEATHER_CITY:-Paris}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: ghcr.io/dcram/fcp-frontend:latest
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
